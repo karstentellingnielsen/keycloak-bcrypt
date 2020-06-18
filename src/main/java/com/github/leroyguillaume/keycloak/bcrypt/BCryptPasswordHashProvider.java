@@ -1,21 +1,14 @@
 package com.github.leroyguillaume.keycloak.bcrypt;
 
-import org.jboss.logging.Logger;
-import org.keycloak.models.credential.PasswordCredentialModel;
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.PasswordPolicy;
-import at.favre.lib.crypto.bcrypt.BCrypt;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import org.keycloak.models.credential.PasswordCredentialModel;
 
 /**
  * @author <a href="mailto:pro.guillaume.leroy@gmail.com">Guillaume Leroy</a>
  */
 public class BCryptPasswordHashProvider implements PasswordHashProvider {
-    // BCrypt uses min of 4 and max of 30 2**log_rounds
-    private final int MAX_BCRYPT_LOG_ROUNDS = 30;
-    private final int MIN_BCRYPT_LOG_ROUNDS = 4;
 
     private final int defaultIterations;
     private final String providerId;
@@ -28,13 +21,13 @@ public class BCryptPasswordHashProvider implements PasswordHashProvider {
     @Override
     public boolean policyCheck(PasswordPolicy policy, PasswordCredentialModel credential) {
         int policyHashIterations = policy.getHashIterations();
-        if (policyHashIterations == -1) {
+
+        if (policyHashIterations < BCrypt.MIN_COST || policyHashIterations > BCrypt.MAX_COST) {
             policyHashIterations = defaultIterations;
         }
 
-        return (credential.getPasswordCredentialData().getHashIterations() == policyHashIterations ||
-                credential.getPasswordCredentialData().getHashIterations() == -1)
-                        && providerId.equals(credential.getPasswordCredentialData().getAlgorithm());
+        return credential.getPasswordCredentialData().getHashIterations() == policyHashIterations
+                && providerId.equals(credential.getPasswordCredentialData().getAlgorithm());
     }
 
     @Override
